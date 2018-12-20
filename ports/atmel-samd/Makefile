@@ -54,38 +54,39 @@ INC += -I. \
        -I../../supervisor/shared/usb \
        -I$(BUILD)
 
+# Alphabetized (case-sensitive)
 BASE_CFLAGS = \
-	-fsingle-precision-constant \
-	-fno-strict-aliasing \
-	-Wdouble-promotion \
-	-Wno-endif-labels \
-	-Wstrict-prototypes \
-	-Werror-implicit-function-declaration \
-	-Wfloat-equal \
-	-Wundef \
-	-Wshadow \
-	-Wwrite-strings \
-	-Wsign-compare \
-	-Wmissing-format-attribute \
-	-Wno-deprecated-declarations \
-	-Wnested-externs \
-	-Wunreachable-code \
-	-Wcast-align \
-	-Wno-error=lto-type-mismatch \
-	-D__$(CHIP_VARIANT)__ \
-	-ffunction-sections \
-	-fdata-sections \
-	-fshort-enums \
-	-DCIRCUITPY_SOFTWARE_SAFE_MODE=0x0ADABEEF \
+	--param max-inline-insns-single=500
 	-DCIRCUITPY_CANARY_WORD=0xADAF00 \
 	-DCIRCUITPY_SAFE_RESTART_WORD=0xDEADBEEF \
-	--param max-inline-insns-single=500
+	-DCIRCUITPY_SOFTWARE_SAFE_MODE=0x0ADABEEF \
+	-D__$(CHIP_VARIANT)__ \
+	-Wcast-align \
+	-Wdouble-promotion \
+	-Werror-implicit-function-declaration \
+	-Wfloat-equal \
+	-Wmissing-format-attribute \
+	-Wnested-externs \
+	-Wno-deprecated-declarations \
+	-Wno-endif-labels \
+	-Wno-error=lto-type-mismatch \
+	-Wshadow \
+	-Wsign-compare \
+	-Wstrict-prototypes \
+	-Wundef \
+	-Wunreachable-code \
+	-Wwrite-strings \
+	-fdata-sections \
+	-ffunction-sections \
+	-fno-strict-aliasing \
+	-fshort-enums \
+	-fsingle-precision-constant \
 
-	# Use these flags to debug build times and header includes.
-	# -ftime-report
-	# -H
+#       Use these flags to debug build times and header includes.
+#	-ftime-report
+#	-H
+
 # NDEBUG disables assert() statements. This reduces code size pretty dramatically, per tannewt.
-
 ifeq ($(CHIP_FAMILY), samd21)
 CFLAGS += -Os -DNDEBUG
 # TinyUSB defines

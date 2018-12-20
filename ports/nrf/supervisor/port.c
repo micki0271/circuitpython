@@ -110,7 +110,7 @@ uint32_t port_get_saved_word(void) {
     return _ebss;
 }
 
-void HardFault_Handler(void) {
+__attribute__((used)) void HardFault_Handler(void) {
     reset_into_safe_mode(HARD_CRASH);
     while (true) {
         asm("nop;");

@@ -44,7 +44,7 @@ void Default_Handler(void) {
     while (1);
 }
 
-void Reset_Handler(void) {
+__attribute__((used)) void Reset_Handler(void) {
     uint32_t * p_src  = &_sidata;
     uint32_t * p_dest = &_sdata;
 
@@ -116,7 +116,7 @@ void CRYPTOCELL_IRQHandler       (void) __attribute__ ((weak, alias("Default_Han
 void SPIM3_IRQHandler            (void) __attribute__ ((weak, alias("Default_Handler")));
 void PWM3_IRQHandler             (void) __attribute__ ((weak, alias("Default_Handler")));
 
-const func __Vectors[] __attribute__ ((section(".isr_vector"))) = {
+const func __Vectors[] __attribute__ ((used, section(".isr_vector"))) = {
     (func)&_estack,
     Reset_Handler,
     NMI_Handler,

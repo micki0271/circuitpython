@@ -56,7 +56,7 @@ STATIC NRF_PWM_Type* pwms[] = {
 STATIC uint16_t pwm_seq[MP_ARRAY_SIZE(pwms)][CHANNELS_PER_PWM];
 
 void pwmout_reset(void) {
-    for(int i=0; i < MP_ARRAY_SIZE(pwms); i++) {
+    for(size_t i=0; i < MP_ARRAY_SIZE(pwms); i++) {
         NRF_PWM_Type* pwm = pwms[i];
 
         pwm->ENABLE          = 0;

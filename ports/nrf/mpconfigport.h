@@ -121,7 +121,7 @@
 
 #define MICROPY_KBD_EXCEPTION                    (1)
 
-#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (1)
+#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (0)
 #define MICROPY_EMERGENCY_EXCEPTION_BUF_SIZE     (0)
 
 // Scan gamepad every 32ms

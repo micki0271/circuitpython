@@ -356,7 +356,7 @@ int run_repl(void) {
     return exit_code;
 }
 
-int __attribute__((used)) main(void) {
+int main(void) {
     memory_init();
 
     // initialise the cpu and peripherals

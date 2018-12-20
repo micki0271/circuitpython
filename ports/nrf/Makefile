@@ -61,31 +61,67 @@ INC += -I../../supervisor/shared/usb
 
 NRF_DEFINES += -DCONFIG_GPIO_AS_PINRESET
 
-CFLAGS += -mthumb -mabi=aapcs -fsingle-precision-constant -Wdouble-promotion
-CFLAGS += -mtune=cortex-m4 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard
-CFLAGS += $(INC) -Wall -Werror -ansi -std=gnu99 -nostdlib $(COPT) $(NRF_DEFINES) $(CFLAGS_MOD)
-CFLAGS += -fno-strict-aliasing
-CFLAGS += -fstack-usage -fno-builtin -fshort-enums
-CFLAGS += -fdata-sections -ffunction-sections
-CFLAGS += -D__START=main
+CFLAGS += \
+	-mthumb \
+	-mabi=aapcs \
+	-mcpu=cortex-m4 \
+	-mfloat-abi=hard \
+	-mfpu=fpv4-sp-d16
 
-LDFLAGS = $(CFLAGS)
-LDFLAGS += -Xlinker -Map=$(@:.elf=.map)
-LDFLAGS += -mthumb -mabi=aapcs -T $(LD_FILE) -L boards/
-LDFLAGS += -Wl,--gc-sections
+# Alphabetized (case-sensitive)
+CFLAGS += \
+	--param max-inline-insns-single=500 \
+	-Wdouble-promotion \
+	-Werror-implicit-function-declaration \
+	-Wfloat-equal \
+	-Wmissing-format-attribute \
+	-Wnested-externs \
+	-Wno-deprecated-declarations \
+	-Wno-endif-labels \
+	-Wno-error=lto-type-mismatch \
+	-Wshadow \
+	-Wstrict-prototypes \
+	-Wunreachable-code \
+	-Wwrite-strings \
+	-fdata-sections \
+	-ffunction-sections \
+	-fno-strict-aliasing \
+	-fshort-enums \
+	-fsingle-precision-constant \
+
+# Turn off for now. nrf tinyusb needs fixes:
+#	-Wsign-compare
+
+# nrf builds generally do this, maybe to make debugging easier? Shrinks size slightly.
+CFLAGS += -fno-builtin
+
+# Incompatible with nrf includes
+#	-Wundef
+#       -Wcast-align
+
+
+CFLAGS += $(INC) -Wall -Werror -ansi -std=gnu11 -nostdlib  $(COPT) $(NRF_DEFINES) $(CFLAGS_MOD)
+CFLAGS += -D__START=main
 
 # TinyUSB defines
 CFLAGS += -DCFG_TUSB_MCU=OPT_MCU_NRF5X -DCFG_TUD_CDC_RX_BUFSIZE=1024 -DCFG_TUD_CDC_TX_BUFSIZE=1024 -DCFG_TUD_MSC_BUFSIZE=4096
 
 #Debugging/Optimization
 ifeq ($(DEBUG), 1)
-#ASMFLAGS += -g -gtabs+
-CFLAGS += -O1 -ggdb
-LDFLAGS += -O1
+  #ASMFLAGS += -g -gtabs+
+  CFLAGS += -O1 -ggdb
+  # You may want to disable -flto if it interferes with debugging.
+  CFLAGS += -flto
+  # You may want to enable these flags to make setting breakpoints easier.
+  # CFLAGS += -fno-inline -fno-ipa-sra
 else
-CFLAGS += -Os -DNDEBUG
-LDFLAGS += -Os
+  CFLAGS += -Os -DNDEBUG -flto
 endif
+
+LDFLAGS = $(CFLAGS)
+LDFLAGS += -Xlinker -Map=$(@:.elf=.map)
+LDFLAGS += -T $(LD_FILE) -L boards/
+LDFLAGS += -Wl,--gc-sections
 
 LIBM_FILE_NAME   = $(shell $(CC) $(CFLAGS) -print-file-name=libm.a)
 LIBC_FILE_NAME   = $(shell $(CC) $(CFLAGS) -print-file-name=libc.a)
@@ -118,9 +154,9 @@ SRC_C += \
 	board_busses.c \
 	boards/$(BOARD)/board.c \
 	boards/$(BOARD)/pins.c \
-	device/$(MCU_VARIANT)/startup_$(MCU_SUB_VARIANT).c \
 	bluetooth/ble_drv.c \
 	bluetooth/ble_uart.c \
+	device/$(MCU_VARIANT)/startup_$(MCU_SUB_VARIANT).c \
 	lib/libc/string0.c \
 	lib/mp-readline/readline.c \
 	lib/oofatfs/ff.c \
