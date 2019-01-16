@@ -33,7 +33,7 @@
 
 typedef struct {
     mp_obj_base_t base;
-    bleio_characteristic_obj_t *characteristic;
+    mp_obj_t characteristic;
     // Ring buffer storing consecutive incoming values.
     ringbuf_t ringbuf;
 } bleio_characteristic_buffer_obj_t;

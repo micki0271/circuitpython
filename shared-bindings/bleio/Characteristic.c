@@ -70,7 +70,8 @@ STATIC mp_obj_t bleio_characteristic_make_new(const mp_obj_type_t *type, size_t 
 
     const mp_obj_t uuid = args[ARG_uuid].u_obj;
 
-    if (!MP_OBJ_IS_TYPE(uuid, &bleio_uuid_type)) {
+    // May be a bleio.UUID or a subclass.
+    if (!mp_isinstance(uuid, &bleio_uuid_type)) {
         mp_raise_ValueError(translate("Expected a UUID"));
     }
 

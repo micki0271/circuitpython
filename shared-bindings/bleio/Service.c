@@ -62,7 +62,8 @@ STATIC mp_obj_t bleio_service_make_new(const mp_obj_type_t *type, size_t n_args,
 
     const mp_obj_t uuid = args[ARG_uuid].u_obj;
 
-    if (!MP_OBJ_IS_TYPE(uuid, &bleio_uuid_type)) {
+    // May be a bleio.UUID or a subclass.
+    if (!mp_isinstance(uuid, &bleio_uuid_type)) {
         mp_raise_ValueError(translate("Expected a UUID"));
     }
 
@@ -80,7 +81,7 @@ STATIC mp_obj_t bleio_service_make_new(const mp_obj_type_t *type, size_t n_args,
     mp_obj_t characteristic;
 
     while ((characteristic = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
-        if (!MP_OBJ_IS_TYPE(characteristic, &bleio_characteristic_type)) {
+        if (!mp_isinstance(characteristic, &bleio_characteristic_type)) {
             mp_raise_ValueError(translate("characteristics includes an object that is not a Characteristic"));
         }
         bleio_characteristic_obj_t *characteristic_ptr = MP_OBJ_TO_PTR(characteristic);

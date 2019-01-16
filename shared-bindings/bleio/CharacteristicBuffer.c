@@ -61,13 +61,13 @@ STATIC mp_obj_t bleio_characteristic_buffer_make_new(const mp_obj_type_t *type, 
         mp_raise_ValueError(translate("buffer_size must be >= 1"));
     }
 
-    if (!MP_OBJ_IS_TYPE(characteristic, &bleio_characteristic_type)) {
+    if (!mp_isinstance(characteristic, &bleio_characteristic_type)) {
         mp_raise_ValueError(translate("Expected a Characteristic"));
     }
 
     bleio_characteristic_buffer_obj_t *self = m_new_obj(bleio_characteristic_buffer_obj_t);
     self->base.type = &bleio_characteristic_buffer_type;
-    self->characteristic = MP_OBJ_TO_PTR(characteristic);
+    self->characteristic = characteristic;
 
     common_hal_bleio_characteristic_buffer_construct(self, self->characteristic, buffer_size);
 

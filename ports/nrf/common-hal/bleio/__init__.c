@@ -46,23 +46,28 @@ const super_adapter_obj_t common_hal_bleio_adapter_obj = {
 };
 
 gatt_role_t common_hal_bleio_device_get_gatt_role(mp_obj_t device) {
-    if (MP_OBJ_IS_TYPE(device, &bleio_peripheral_type)) {
+    bleio_peripheral_obj_t *peripheral = mp_instance_cast_to_native_base(device, &bleio_peripheral_type);
+    if (peripheral != mp_const_none) {
         return ((bleio_peripheral_obj_t*) MP_OBJ_TO_PTR(device))->gatt_role;
-// Does not exist yet.
-//    } else if (MP_OBJ_IS_TYPE(device, &bleio_central_type)) {
-//        return ((bleio_central_obj_t*) MP_OBJ_TO_PTR(device))->gatt_role;
-    } else {
-        return GATT_ROLE_NONE;
     }
+// Does not exist yet.
+//    bleio_central_obj_t *central = mp_instance_cast_to_native_base(device, &bleio_central_type);
+//    if (central != mp_const_none) {
+//        return ((bleio_central_obj_t*) MP_OBJ_TO_PTR(device))->gatt_role;
+//    }
+    return GATT_ROLE_NONE;
+
 }
 
 uint16_t common_hal_bleio_device_get_conn_handle(mp_obj_t device) {
-    if (MP_OBJ_IS_TYPE(device, &bleio_peripheral_type)) {
+    bleio_peripheral_obj_t *peripheral = mp_instance_cast_to_native_base(device);
+    if (peripheral != mp_const_none) {
         return ((bleio_peripheral_obj_t*) MP_OBJ_TO_PTR(device))->conn_handle;
-// Does not exist yet.
-//    } else if (MP_OBJ_IS_TYPE(device, &bleio_central_type)) {
-//        return ((bleio_central_obj_t*) MP_OBJ_TO_PTR(device))->conn_handle;
-    } else {
-        return 0;
     }
+// Does not exist yet.
+//    bleio_central_obj_t *central = mp_instance_cast_to_native_base(device, &bleio_central_type);
+//    if (central != mp_const_none) {
+//        return ((bleio_central_obj_t*) MP_OBJ_TO_PTR(device))->gatt_role;
+//    }
+    return 0;
 }

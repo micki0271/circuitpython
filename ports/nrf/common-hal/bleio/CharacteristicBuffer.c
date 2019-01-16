@@ -42,7 +42,9 @@ STATIC void characteristic_buffer_on_ble_evt(ble_evt_t *ble_evt, void *param) {
     case BLE_GATTS_EVT_WRITE: {
         ble_gatts_evt_write_t *evt_write = &ble_evt->evt.gatts_evt.params.write;
         // Event handle must match the handle for my characteristic.
-        if (evt_write->handle == self->characteristic->handle) {
+        bleio_characteristic_obj_t *native_characteristic =
+            mp_instance_cast_to_native_base(self->characteristic);
+        if (evt_write->handle == native_characteristic->handle) {
             // Push all the data onto the ring buffer.
             for (size_t i = 0; i < evt_write->len; i++) {
                 ringbuf_put(&self->ringbuf, evt_write->data[i]);
@@ -55,7 +57,7 @@ STATIC void characteristic_buffer_on_ble_evt(ble_evt_t *ble_evt, void *param) {
 }
 
 // Assumes that buffer_size has been validated before call.
-void common_hal_bleio_characteristic_buffer_construct(bleio_characteristic_buffer_obj_t *self, bleio_characteristic_obj_t *characteristic, size_t buffer_size) {
+void common_hal_bleio_characteristic_buffer_construct(bleio_characteristic_buffer_obj_t *self, mp_obj_t characteristic, size_t buffer_size) {
 
     self->characteristic = characteristic;
     // This is a macro.

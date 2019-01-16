@@ -1418,6 +1418,11 @@ mp_obj_t mp_instance_cast_to_native_base(mp_obj_t self_in, mp_const_obj_t native
     return self->subobj[0];
 }
 
+bool mp_isinstance(mp_obj_t object, mp_const_obj_t classinfo) {
+    return mp_obj_is_subclass_fast(MP_OBJ_FROM_PTR(mp_obj_get_type(object)), classinfo);
+}
+
+
 /******************************************************************************/
 // staticmethod and classmethod types (probably should go in a different file)
 

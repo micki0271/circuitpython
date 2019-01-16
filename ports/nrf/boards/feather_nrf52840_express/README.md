@@ -50,12 +50,7 @@ be used.
 
 Before you can install the bootloader, you will first need to install the
 `nrfjprog` tool from Nordic Semiconductors for your operating system. The
-binary files can be downloaded via the following links:
-
-- [nRF5x toolset tar for Linux 32-bit v9.7.2](http://www.nordicsemi.com/eng/nordic/Products/nRF52832/nRF5x-Command-Line-Tools-Linux32/52619)
-- [nRF5x toolset tar for Linux 64-bit v9.7.2](http://www.nordicsemi.com/eng/nordic/Products/nRF52832/nRF5x-Command-Line-Tools-Linux64/51388)
-- [nRF5x toolset tar for OSX v9.7.2](http://www.nordicsemi.com/eng/nordic/Products/nRF52832/nRF5x-Command-Line-Tools-OSX/53406)
-- [nRF5x toolset installer for Windows v9.7.2](http://www.nordicsemi.com/eng/nordic/Products/nRF52832/nRF5x-Command-Line-Tools-Win32/48768)
+binary files can be downloaded from [nRF5 Command Line Tools](https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF5-Command-Line-Tools).
 
 You will then need to add the `nrfjprog` folder to your system `PATH` variable
 so that it is available from the command line. The exact process for this is

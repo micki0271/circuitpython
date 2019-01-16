@@ -33,9 +33,10 @@ typedef struct {
     mp_obj_base_t base;
     uint16_t handle;
     bool is_secondary;
-    bleio_uuid_obj_t *uuid;
+    // An instance of bleio.UUID or one of its subclasses.
+    mp_obj_t uuid;
     // May be a Peripheral, Central, etc.
-    mp_obj_t *device;
+    mp_obj_t device;
     mp_obj_t char_list;
     uint16_t start_handle;
     uint16_t end_handle;

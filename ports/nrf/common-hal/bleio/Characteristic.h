@@ -33,8 +33,10 @@
 
 typedef struct {
     mp_obj_base_t base;
-    bleio_service_obj_t *service;
-    bleio_uuid_obj_t *uuid;
+    // An instance of bleio.Service or one of its subclasses.
+    mp_obj_t service;
+    // An instance of bleio.UUID or one of its subclasses.
+    mp_obj_t uuid;
     mp_obj_t value_data;
     uint16_t handle;
     bleio_characteristic_properties_t props;

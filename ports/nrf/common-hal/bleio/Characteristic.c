@@ -32,6 +32,7 @@
 #include "nrf_soc.h"
 
 #include "py/runtime.h"
+#include "shared-bindings/bleio/Service.h"
 #include "common-hal/bleio/__init__.h"
 #include "common-hal/bleio/Characteristic.h"
 #include "shared-module/bleio/Characteristic.h"
@@ -42,7 +43,9 @@ STATIC volatile uint8_t m_tx_in_progress;
 STATIC nrf_mutex_t *m_write_mutex;
 
 STATIC uint16_t get_cccd(bleio_characteristic_obj_t *characteristic) {
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
     uint16_t cccd;
     ble_gatts_value_t value = {
         .p_value = (uint8_t*) &cccd,
@@ -65,7 +68,9 @@ STATIC uint16_t get_cccd(bleio_characteristic_obj_t *characteristic) {
 STATIC void gatts_read(bleio_characteristic_obj_t *characteristic) {
     // This might be BLE_CONN_HANDLE_INVALID if we're not conected, but that's OK, because
     // we can still read and write the local value.
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
 
     mp_buffer_info_t bufinfo;
     ble_gatts_value_t gatts_value = {
@@ -94,7 +99,9 @@ STATIC void gatts_read(bleio_characteristic_obj_t *characteristic) {
 STATIC void gatts_write(bleio_characteristic_obj_t *characteristic, mp_buffer_info_t *bufinfo) {
     // This might be BLE_CONN_HANDLE_INVALID if we're not conected, but that's OK, because
     // we can still read and write the local value.
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
 
     ble_gatts_value_t gatts_value = {
         .p_value = bufinfo->buf,
@@ -124,7 +131,9 @@ STATIC void gatts_notify_indicate(bleio_characteristic_obj_t *characteristic, mp
 #endif
     }
 
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
     m_tx_in_progress++;
     const uint32_t err_code = sd_ble_gatts_hvx(conn_handle, &hvx_params);
     if (err_code != NRF_SUCCESS) {
@@ -135,7 +144,9 @@ STATIC void gatts_notify_indicate(bleio_characteristic_obj_t *characteristic, mp
 }
 
 STATIC void gattc_read(bleio_characteristic_obj_t *characteristic) {
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
 
     m_read_characteristic = characteristic;
 
@@ -153,7 +164,9 @@ STATIC void gattc_read(bleio_characteristic_obj_t *characteristic) {
 }
 
 STATIC void gattc_write(bleio_characteristic_obj_t *characteristic, mp_buffer_info_t *bufinfo) {
-    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(characteristic->service->device);
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(characteristic->service, &bleio_service_type));
+    const uint16_t conn_handle = common_hal_bleio_device_get_conn_handle(service->device);
     uint32_t err_code;
 
     ble_gattc_write_params_t write_params = {
@@ -228,7 +241,7 @@ STATIC void characteristic_on_ble_evt(ble_evt_t *ble_evt, void *param) {
 
 void common_hal_bleio_characteristic_construct(bleio_characteristic_obj_t *self, bleio_uuid_obj_t *uuid, bleio_characteristic_properties_t props) {
     self->service = NULL;
-    self->uuid = uuid;
+    self->uuid = MP_OBJ_FROM_PTR(uuid);
     self->value_data = NULL;
     self->props = props;
     self->handle = BLE_GATT_HANDLE_INVALID;
@@ -238,7 +251,9 @@ void common_hal_bleio_characteristic_construct(bleio_characteristic_obj_t *self,
 }
 
 void common_hal_bleio_characteristic_get_value(bleio_characteristic_obj_t *self) {
-    switch (common_hal_bleio_device_get_gatt_role(self->service->device)) {
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(self->service, &bleio_service_type));
+    switch (common_hal_bleio_device_get_gatt_role(service->device)) {
     case GATT_ROLE_CLIENT:
         gattc_read(self);
         break;
@@ -257,7 +272,9 @@ void common_hal_bleio_characteristic_set_value(bleio_characteristic_obj_t *self,
     bool sent = false;
     uint16_t cccd = 0;
 
-    switch (common_hal_bleio_device_get_gatt_role(self->service->device)) {
+    bleio_service_obj_t *service =
+        MP_OBJ_TO_PTR(mp_instance_cast_to_native_base(self->service, &bleio_service_type));
+    switch (common_hal_bleio_device_get_gatt_role(service->device)) {
     case GATT_ROLE_SERVER:
         if (self->props.notify || self->props.indicate) {
             cccd = get_cccd(self);
