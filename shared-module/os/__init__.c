@@ -28,62 +28,62 @@
 
 #include <string.h>
 
-#include "extmod/vfs.h"
 #include "py/mperrno.h"
 #include "py/mpstate.h"
 #include "py/obj.h"
 #include "py/objstr.h"
 #include "py/runtime.h"
+#include "supervisor/shared/vfs.h"
 #include "shared-bindings/os/__init__.h"
 
 // This provides all VFS related OS functions so that ports can share the code
 // as needed. It does not provide uname.
 
-// Version of mp_vfs_lookup_path that takes and returns uPy string objects.
-STATIC mp_vfs_mount_t *lookup_path(const char* path, mp_obj_t *path_out) {
-    const char *p_out;
-    mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &p_out);
-    if (vfs != MP_VFS_NONE && vfs != MP_VFS_ROOT) {
-        *path_out = mp_obj_new_str_of_type(&mp_type_str,
-            (const byte*)p_out, strlen(p_out));
-    }
-    return vfs;
-}
+typedef struct _ilistdir_it_t {
+    mp_obj_base_t base;
+    mp_fun_1_t iternext;
+    union {
+        mp_vfs_mount_t *vfs;
+        mp_obj_t iter;
+    } cur;
+    bool is_str;
+    bool is_iter;
+} ilistdir_it_t;
 
-// Strip off trailing slashes to please underlying libraries
-STATIC mp_vfs_mount_t *lookup_dir_path(const char* path, mp_obj_t *path_out) {
-    const char *p_out;
-    mp_vfs_mount_t *vfs = mp_vfs_lookup_path(path, &p_out);
-    if (vfs != MP_VFS_NONE && vfs != MP_VFS_ROOT) {
-        size_t len = strlen(p_out);
-        while (len > 1 && p_out[len - 1] == '/') {
-            len--;
+STATIC mp_obj_t ilistdir_it_iternext(mp_obj_t self_in) {
+    ilistdir_it_t *self = MP_OBJ_TO_PTR(self_in);
+    if (self->is_iter) {
+        // continue delegating to root dir
+        return mp_iternext(self->cur.iter);
+    } else if (self->cur.vfs == NULL) {
+        // finished iterating mount points and no root dir is mounted
+        return MP_OBJ_STOP_ITERATION;
+    } else {
+        // continue iterating mount points
+        mp_vfs_mount_t *vfs = self->cur.vfs;
+        self->cur.vfs = vfs->next;
+        if (vfs->len == 1) {
+            // vfs is mounted at root dir, delegate to it
+            mp_obj_t root = MP_OBJ_NEW_QSTR(MP_QSTR__slash_);
+            self->is_iter = true;
+            self->cur.iter = mp_vfs_proxy_call(vfs, MP_QSTR_ilistdir, 1, &root);
+            return mp_iternext(self->cur.iter);
+        } else {
+            // a mounted directory
+            mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
+            t->items[0] = mp_obj_new_str_of_type(
+                self->is_str ? &mp_type_str : &mp_type_bytes,
+                (const byte*)vfs->str + 1, vfs->len - 1);
+            t->items[1] = MP_OBJ_NEW_SMALL_INT(MP_S_IFDIR);
+            t->items[2] = MP_OBJ_NEW_SMALL_INT(0); // no inode number
+            return MP_OBJ_FROM_PTR(t);
         }
-        *path_out = mp_obj_new_str_of_type(&mp_type_str, (const byte*)p_out, len);
     }
-    return vfs;
-}
-
-STATIC mp_obj_t mp_vfs_proxy_call(mp_vfs_mount_t *vfs, qstr meth_name, size_t n_args, const mp_obj_t *args) {
-    if (vfs == MP_VFS_NONE) {
-        // mount point not found
-        mp_raise_OSError(MP_ENODEV);
-    }
-    if (vfs == MP_VFS_ROOT) {
-        // can't do operation on root dir
-        mp_raise_OSError(MP_EPERM);
-    }
-    mp_obj_t meth[n_args + 2];
-    mp_load_method(vfs->obj, meth_name, meth);
-    if (args != NULL) {
-        memcpy(meth + 2, args, n_args * sizeof(*args));
-    }
-    return mp_call_method_n_kw(n_args, 0, meth);
 }
 
 void common_hal_os_chdir(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_dir_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_dir_path_str_out(path, &path_out);
     MP_STATE_VM(vfs_cur) = vfs;
     if (vfs == MP_VFS_ROOT) {
         // If we change to the root dir and a VFS is mounted at the root then
@@ -91,7 +91,7 @@ void common_hal_os_chdir(const char* path) {
         // subsequent relative paths begin at the root of that VFS.
         for (vfs = MP_STATE_VM(vfs_mount_table); vfs != NULL; vfs = vfs->next) {
             if (vfs->len == 1) {
-                mp_obj_t root = mp_obj_new_str("/", 1);
+                mp_obj_t root = MP_OBJ_NEW_QSTR(MP_QSTR__slash_);
                 mp_vfs_proxy_call(vfs, MP_QSTR_chdir, 1, &root);
                 break;
             }
@@ -102,20 +102,35 @@ void common_hal_os_chdir(const char* path) {
 }
 
 mp_obj_t common_hal_os_getcwd(void) {
-    return mp_vfs_getcwd();
+    if (MP_STATE_VM(vfs_cur) == MP_VFS_ROOT) {
+        return MP_OBJ_NEW_QSTR(MP_QSTR__slash_);
+    }
+    mp_obj_t cwd_o = mp_vfs_proxy_call(MP_STATE_VM(vfs_cur), MP_QSTR_getcwd, 0, NULL);
+    if (MP_STATE_VM(vfs_cur)->len == 1) {
+        // don't prepend "/" for vfs mounted at root
+        return cwd_o;
+    }
+    const char *cwd = mp_obj_str_get_str(cwd_o);
+    vstr_t vstr;
+    vstr_init(&vstr, MP_STATE_VM(vfs_cur)->len + strlen(cwd) + 1);
+    vstr_add_strn(&vstr, MP_STATE_VM(vfs_cur)->str, MP_STATE_VM(vfs_cur)->len);
+    if (!(cwd[0] == '/' && cwd[1] == 0)) {
+        vstr_add_str(&vstr, cwd);
+    }
+    return mp_obj_new_str_from_vstr(&mp_type_str, &vstr);
 }
 
 mp_obj_t common_hal_os_listdir(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_dir_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_dir_path_str_out(path, &path_out);
 
-    mp_vfs_ilistdir_it_t iter;
+    ilistdir_it_t iter;
     mp_obj_t iter_obj = MP_OBJ_FROM_PTR(&iter);
 
     if (vfs == MP_VFS_ROOT) {
         // list the root directory
         iter.base.type = &mp_type_polymorph_iter;
-        iter.iternext = mp_vfs_ilistdir_it_iternext;
+        iter.iternext = ilistdir_it_iternext;
         iter.cur.vfs = MP_STATE_VM(vfs_mount_table);
         iter.is_str = true;
         iter.is_iter = false;
@@ -135,7 +150,7 @@ mp_obj_t common_hal_os_listdir(const char* path) {
 
 void common_hal_os_mkdir(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_dir_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_dir_path_str_out(path, &path_out);
     if (vfs == MP_VFS_ROOT || (vfs != MP_VFS_NONE && !strcmp(mp_obj_str_get_str(path_out), "/"))) {
         mp_raise_OSError(MP_EEXIST);
     }
@@ -144,14 +159,14 @@ void common_hal_os_mkdir(const char* path) {
 
 void common_hal_os_remove(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_path_str_out(path, &path_out);
     mp_vfs_proxy_call(vfs, MP_QSTR_remove, 1, &path_out);
 }
 
 void common_hal_os_rename(const char* old_path, const char* new_path) {
     mp_obj_t args[2];
-    mp_vfs_mount_t *old_vfs = lookup_path(old_path, &args[0]);
-    mp_vfs_mount_t *new_vfs = lookup_path(new_path, &args[1]);
+    mp_vfs_mount_t *old_vfs = mp_vfs_lookup_path_str_out(old_path, &args[0]);
+    mp_vfs_mount_t *new_vfs = mp_vfs_lookup_path_str_out(new_path, &args[1]);
     if (old_vfs != new_vfs) {
         // can't rename across filesystems
         mp_raise_OSError(MP_EPERM);
@@ -161,13 +176,13 @@ void common_hal_os_rename(const char* old_path, const char* new_path) {
 
 void common_hal_os_rmdir(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_dir_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_dir_path_str_out(path, &path_out);
     mp_vfs_proxy_call(vfs, MP_QSTR_rmdir, 1, &path_out);
 }
 
 mp_obj_t common_hal_os_stat(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_path_str_out(path, &path_out);
     if (vfs == MP_VFS_ROOT) {
         mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
         t->items[0] = MP_OBJ_NEW_SMALL_INT(MP_S_IFDIR); // st_mode
@@ -181,7 +196,7 @@ mp_obj_t common_hal_os_stat(const char* path) {
 
 mp_obj_t common_hal_os_statvfs(const char* path) {
     mp_obj_t path_out;
-    mp_vfs_mount_t *vfs = lookup_path(path, &path_out);
+    mp_vfs_mount_t *vfs = mp_vfs_lookup_path_str_out(path, &path_out);
     if (vfs == MP_VFS_ROOT) {
         // statvfs called on the root directory, see if there's anything mounted there
         for (vfs = MP_STATE_VM(vfs_mount_table); vfs != NULL; vfs = vfs->next) {

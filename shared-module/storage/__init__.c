@@ -28,7 +28,6 @@
 
 #include <string.h>
 
-#include "extmod/vfs.h"
 #include "py/mperrno.h"
 #include "py/obj.h"
 #include "py/runtime.h"
@@ -36,25 +35,9 @@
 #include "shared-bindings/os/__init__.h"
 #include "shared-bindings/storage/__init__.h"
 #include "supervisor/filesystem.h"
+#include "supervisor/shared/vfs.h"
 #include "supervisor/flash.h"
 #include "supervisor/usb.h"
-
-STATIC mp_obj_t mp_vfs_proxy_call(mp_vfs_mount_t *vfs, qstr meth_name, size_t n_args, const mp_obj_t *args) {
-    if (vfs == MP_VFS_NONE) {
-        // mount point not found
-        mp_raise_OSError(MP_ENODEV);
-    }
-    if (vfs == MP_VFS_ROOT) {
-        // can't do operation on root dir
-        mp_raise_OSError(MP_EPERM);
-    }
-    mp_obj_t meth[n_args + 2];
-    mp_load_method(vfs->obj, meth_name, meth);
-    if (args != NULL) {
-        memcpy(meth + 2, args, n_args * sizeof(*args));
-    }
-    return mp_call_method_n_kw(n_args, 0, meth);
-}
 
 void common_hal_storage_mount(mp_obj_t vfs_obj, const char* mount_path, bool readonly) {
     // create new object

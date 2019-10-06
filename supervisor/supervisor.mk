@@ -10,7 +10,8 @@ SRC_SUPERVISOR = \
 	supervisor/shared/safe_mode.c \
 	supervisor/shared/stack.c \
 	supervisor/shared/status_leds.c \
-	supervisor/shared/translate.c
+	supervisor/shared/translate.c \
+	supervisor/shared/vfs.c
 
 ifndef $(NO_USB)
 	NO_USB = $(wildcard supervisor/usb.c)
@@ -46,7 +47,7 @@ ifdef EXTERNAL_FLASH_DEVICES
 else
 	ifeq ($(DISABLE_FILESYSTEM),1)
 		SRC_SUPERVISOR += supervisor/stub/internal_flash.c
-	else 
+	else
 		SRC_SUPERVISOR += supervisor/internal_flash.c
 	endif
 endif

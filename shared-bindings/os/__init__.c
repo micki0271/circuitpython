@@ -28,12 +28,12 @@
 
 #include <string.h>
 
-#include "extmod/vfs.h"
 #include "lib/oofatfs/ff.h"
 #include "lib/oofatfs/diskio.h"
 #include "py/mpstate.h"
 #include "py/obj.h"
 #include "py/runtime.h"
+#include "supervisor/shared/vfs.h"
 #include "shared-bindings/os/__init__.h"
 
 //| :mod:`os` --- functions that an OS normally provides

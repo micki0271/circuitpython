@@ -27,9 +27,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "extmod/vfs.h"
-#include "extmod/vfs_fat.h"
-
 #include "genhdr/mpversion.h"
 #include "py/nlr.h"
 #include "py/compile.h"
@@ -55,6 +52,8 @@
 #include "supervisor/shared/safe_mode.h"
 #include "supervisor/shared/status_leds.h"
 #include "supervisor/shared/stack.h"
+#include "supervisor/shared/vfs.h"
+#include "supervisor/shared/vfs_fat.h"
 #include "supervisor/serial.h"
 
 #if CIRCUITPY_DISPLAYIO
