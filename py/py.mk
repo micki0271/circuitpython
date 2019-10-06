@@ -241,7 +241,9 @@ PY_CORE_O_BASENAME = $(addprefix py/,\
 	frozenmod.o \
 	)
 
-PY_EXTMOD_O_BASENAME = \
+# CircuitPython uses shared-module/ and supervisor/, not extmod/
+ifneq ($(CIRCUITPY),1)
+PY_EXTMOD_O_BASENAME += \
 	extmod/moductypes.o \
 	extmod/modujson.o \
 	extmod/modure.o \
@@ -267,6 +269,11 @@ PY_EXTMOD_O_BASENAME = \
 	extmod/vfs_fat_file.o \
 	extmod/utime_mphal.o \
 	extmod/uos_dupterm.o \
+
+endif
+
+# These "EXTMOD" files (not in extmod/) are potentially used by all ports.
+PY_EXTMOD_O_BASENAME += \
 	lib/embed/abort_.o \
 	lib/utils/printf.o \
 

@@ -151,6 +151,9 @@ endif
 ifeq ($(CIRCUITPY_I2CSLAVE),1)
 SRC_PATTERNS += i2cslave/%
 endif
+ifeq ($(CIRCUITPY_JSON),1)
+SRC_PATTERNS += json/%
+endif
 ifeq ($(CIRCUITPY_MATH),1)
 SRC_PATTERNS += math/%
 endif
@@ -183,6 +186,9 @@ SRC_PATTERNS += random/%
 endif
 ifeq ($(CIRCUITPY_ROTARYIO),1)
 SRC_PATTERNS += rotaryio/%
+endif
+ifeq ($(CIRCUITPY_RE),1)
+SRC_PATTERNS += re/%
 endif
 ifeq ($(CIRCUITPY_RTC),1)
 SRC_PATTERNS += rtc/%
@@ -259,6 +265,7 @@ SRC_COMMON_HAL_ALL = \
 	frequencyio/FrequencyIn.c \
 	i2cslave/I2CSlave.c \
 	i2cslave/__init__.c \
+	json/__init__.c \
 	microcontroller/Pin.c \
 	microcontroller/Processor.c \
 	microcontroller/__init__.c \
@@ -272,6 +279,7 @@ SRC_COMMON_HAL_ALL = \
 	pulseio/__init__.c \
 	ps2io/Ps2.c \
 	ps2io/__init__.c \
+	re/__init__c \
 	rotaryio/IncrementalEncoder.c \
 	rotaryio/__init__.c \
 	rtc/RTC.c \

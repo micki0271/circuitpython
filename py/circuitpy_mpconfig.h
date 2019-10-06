@@ -191,10 +191,6 @@ typedef long mp_off_t;
 #define MICROPY_PY_UERRNO                     (CIRCUITPY_FULL_BUILD)
 // Opposite setting is deliberate.
 #define MICROPY_PY_UERRNO_ERRORCODE           (!CIRCUITPY_FULL_BUILD)
-#define MICROPY_PY_URE                        (CIRCUITPY_FULL_BUILD)
-#define MICROPY_PY_URE_MATCH_GROUPS           (CIRCUITPY_FULL_BUILD)
-#define MICROPY_PY_URE_MATCH_SPAN_START_END   (CIRCUITPY_FULL_BUILD)
-#define MICROPY_PY_URE_SUB                    (CIRCUITPY_FULL_BUILD)
 
 // LONGINT_IMPL_xxx are defined in the Makefile.
 //
@@ -358,6 +354,12 @@ extern const struct _mp_obj_module_t i2cslave_module;
 #define I2CSLAVE_MODULE
 #endif
 
+#if CIRCUITPY_JSON
+#define JSON_MODULE            { MP_ROM_QSTR(MP_QSTR_json), MP_ROM_PTR(&json_module) },
+#else
+#define JSON_MODULE
+#endif
+
 #if CIRCUITPY_MATH
 extern const struct _mp_obj_module_t math_module;
 #define MATH_MODULE            { MP_OBJ_NEW_QSTR(MP_QSTR_math), (mp_obj_t)&math_module },
@@ -444,6 +446,16 @@ extern const struct _mp_obj_module_t random_module;
 #else
 #define RANDOM_MODULE
 #endif
+
+#if CIRCUITPY_RE
+#define RE_MODULE { MP_ROM_QSTR(MP_QSTR_re), MP_ROM_PTR(&re_module) },
+#else
+#define RE_MODULE
+#endif
+// Enable all features of re if re is enabled.
+#define MICROPY_PY_URE_MATCH_GROUPS           (CIRCUITPY_RE)
+#define MICROPY_PY_URE_MATCH_SPAN_START_END   (CIRCUITPY_RE)
+#define MICROPY_PY_URE_SUB                    (CIRCUITPY_RE)
 
 #if CIRCUITPY_ROTARYIO
 extern const struct _mp_obj_module_t rotaryio_module;
@@ -543,18 +555,6 @@ extern const struct _mp_obj_module_t ustack_module;
 #define ERRNO_MODULE           { MP_ROM_QSTR(MP_QSTR_errno), MP_ROM_PTR(&mp_module_uerrno) },
 #else
 #define ERRNO_MODULE
-#endif
-
-#if MICROPY_PY_UJSON
-#define JSON_MODULE            { MP_ROM_QSTR(MP_QSTR_json), MP_ROM_PTR(&mp_module_ujson) },
-#else
-#define JSON_MODULE
-#endif
-
-#if MICROPY_PY_URE
-#define RE_MODULE { MP_ROM_QSTR(MP_QSTR_re), MP_ROM_PTR(&mp_module_ure) },
-#else
-#define RE_MODULE
 #endif
 
 // Define certain native modules with weak links so they can be replaced with Python
