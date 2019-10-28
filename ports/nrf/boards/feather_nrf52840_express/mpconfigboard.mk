@@ -10,6 +10,7 @@ MCU_CHIP = nrf52840
 SD ?= s140
 SOFTDEV_VERSION ?= 6.1.0
 
+
 BOOT_SETTING_ADDR = 0xFF000
 
 ifeq ($(SD),)
@@ -18,6 +19,9 @@ else
 	LD_FILE = boards/adafruit_$(MCU_SUB_VARIANT)_$(SD_LOWER)_v$(firstword $(subst ., ,$(SOFTDEV_VERSION))).ld
 	CIRCUITPY_BLEIO = 1
 endif
+
+# Don't use up a hardware SPI peripheral for the status DotStar: we only have one or two.
+CIRCUITPY_BITBANG_APA102 = 1
 
 NRF_DEFINES += -DNRF52840_XXAA -DNRF52840
 

@@ -34,7 +34,9 @@
 #define FLASH_SIZE                  (0x100000)
 #define FLASH_PAGE_SIZE             (4096)
 
-#define MICROPY_HW_NEOPIXEL         (&pin_P0_16)
+//#define MICROPY_HW_NEOPIXEL         (&pin_P0_16)
+#define MICROPY_HW_APA102_MOSI   (&pin_P0_13)
+#define MICROPY_HW_APA102_SCK    (&pin_P0_14)
 
 #define MICROPY_HW_LED_STATUS       (&pin_P1_15)
 
